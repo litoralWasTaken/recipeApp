@@ -6,11 +6,14 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
+import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.google.gson.Gson
+import com.squareup.picasso.Picasso
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -26,6 +29,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        var context = this
 
         val linearLayout = findViewById<LinearLayout>(R.id.linearScrollLayout)
         val scrollView = findViewById<ScrollView>(R.id.recipeScrollView)
@@ -37,19 +41,45 @@ class MainActivity : AppCompatActivity() {
             .baseUrl(baseUrl)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
+        for (i in 0..100) {
+            val meal = api.create(MealInterface::class.java).getRandomMeal()
+            var result: MealList? = null
+            var resultList: List<MealList>? = null
 
-        val meal = api.create(MealInterface::class.java).getRandomMeal()
-        var result: MealList? = null
-        GlobalScope.launch {
-            withContext(Dispatchers.IO) {
-                result = meal.execute().body()
-            }
+            GlobalScope.launch {
+                withContext(Dispatchers.IO) {
+                    result = meal.execute().body()
 
-            withContext(Dispatchers.Main) {
-                Log.d(TAG, "result: $result")
-                // generar botones
+                }
+
+                withContext(Dispatchers.Main) {
+                    // generar botones
+                    result!!.meals.forEachIndexed { i, meal ->
+                        var imgBtn = ImageButton(context)
+
+                        if (meal != null) {
+                            Picasso.get().load(meal.strMealThumb).into(imgBtn)
+                        }
+
+                        imgBtn.setOnClickListener {
+                            val intent = Intent(context, RecipeBox::class.java).apply {
+                                putExtra("btnId", i.toString())
+                                putExtra("mealTitle", meal.strMeal)
+                                putExtra("mealInstructions", meal.strInstructions)
+                                putExtra("mealStrThumb", meal.strMealThumb)
+                            }
+
+                            startActivity(intent)
+                        }
+
+                        linearLayout.addView(imgBtn)
+
+                    }
+                }
             }
         }
+
+
 
 
 
@@ -59,24 +89,25 @@ class MainActivity : AppCompatActivity() {
 //        linearLayout.addView(recipeView)
 //        linearLayout.addView(recipeView2)
 
-        for (i in 1..100) {
-           val btn = Button(this)
-            btn.text = i.toString();
-
-            btn.setOnClickListener {
-                val intent = Intent(this, RecipeBox::class.java).apply {
-                    putExtra("btnId", i.toString())
-                }
-
-                startActivity(intent)
-            }
-
-            linearLayout.addView(btn)
-
-        }
+//        for (i in 1..100) {
+//           val btn = Button(this)
+//            btn.text = i.toString();
+//
+//            btn.setOnClickListener {
+//                val intent = Intent(this, RecipeBox::class.java).apply {
+//                    putExtra("btnId", i.toString())
+//                }
+//
+//                startActivity(intent)
+//            }
+//
+//            linearLayout.addView(btn)
+//
+//        }
 //        val view = layoutInflater.inflate(R.layout.recipe_box, null)
 //        scrollView.addView(view)
 
     }
 }
+
 
